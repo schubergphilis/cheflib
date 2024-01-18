@@ -1,0 +1,32 @@
+{
+  "template": "https://github.com/costastf/python_project",
+  "commit": "9d8f08cf9d57aca8c9f3ec5837f96e97c8633ab6",
+  "checkout": null,
+  "context": {
+    "cookiecutter": {
+      "project_type": "lib",
+      "full_name": "Daan de Goede",
+      "email": "ddegoede@schubergphilis.com",
+      "repo_name": "Chef",
+      "main_branch_name": "main",
+      "project_slug": "cheflib",
+      "project_short_description": "A Chef server api python library",
+      "git_url": "https://github.com/schubergphilis/cheflib.git",
+      "pypi_repository": "https://upload.pypi.org/legacy/",
+      "gitlab_runner_image": "IMAGE_WITH_PYTHON39_AND_PIPENV",
+      "gitlab_runner_tags": "[docker]",
+      "tags": "",
+      "development_status": "Beta",
+      "compatible_versions": "3.9",
+      "documentation_url": "https://cheflib.readthedocs.org/en/latest",
+      "release_date": "18-01-2024",
+      "year": "2024",
+      "license": "Apache Software License 2.0",
+      "_extensions": [
+        "jinja2_time.TimeExtension"
+      ],
+      "_template": "https://github.com/costastf/python_project"
+    }
+  },
+  "directory": null
+}
