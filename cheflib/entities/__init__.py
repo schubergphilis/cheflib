@@ -20,7 +20,7 @@
 """
 cheflib package.
 
-Import all parts from cheflib here
+Import all parts from cheflib.entities here
 
 .. _Google Python Style Guide:
    https://google.github.io/styleguide/pyguide.html
@@ -35,15 +35,9 @@ __maintainer__ = 'Daan de Goede, Costas Tyfoxylos'
 __email__ = '<ddegoede@schubergphilis.com>, <ctyfoxylos@schubergphilis.com>'
 __status__ = 'Development'  # "Prototype", "Development", "Production".
 
-from ._version import __version__
-from .cheflib import Chef
-from .cheflibexceptions import (InvalidObject,
-                                InvalidSearchIndex,
-                                NodeNotFound)
+from .base import ChefObject
+from .node import Node
 
 # This is to 'use' the module(s), so lint doesn't complain
-assert __version__
-assert Chef
-assert InvalidObject
-assert InvalidSearchIndex
-assert NodeNotFound
+assert ChefObject
+assert Node

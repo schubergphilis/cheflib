@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # File: cheflibexceptions.py
 #
-# Copyright 2024 Daan de Goede
+# Copyright 2024 Daan de Goede, Costas Tyfoxylos
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -25,12 +25,24 @@ Custom exception code for cheflib.
 
 """
 
-__author__ = '''Daan de Goede <ddegoede@schubergphilis.com>'''
-__docformat__ = '''google'''
-__date__ = '''18-01-2024'''
-__copyright__ = '''Copyright 2024, Daan de Goede'''
-__credits__ = ["Daan de Goede"]
-__license__ = '''Apache Software License 2.0'''
-__maintainer__ = '''Daan de Goede'''
-__email__ = '''<ddegoede@schubergphilis.com>'''
-__status__ = '''Development'''  # "Prototype", "Development", "Production".
+__author__ = 'Daan de Goede <ddegoede@schubergphilis.com>, Costas Tyfoxylos <ctyfoxylos@schubergphilis.com>'
+__docformat__ = 'google'
+__date__ = '18-01-2024'
+__copyright__ = 'Copyright 2024, Daan de Goede, Costas Tyfoxylos'
+__credits__ = ["Daan de Goede", "Costas Tyfoxylos"]
+__license__ = 'Apache Software License 2.0'
+__maintainer__ = 'Daan de Goede, Costas Tyfoxylos'
+__email__ = '<ddegoede@schubergphilis.com>, <ctyfoxylos@schubergphilis.com>'
+__status__ = 'Development'  # "Prototype", "Development", "Production".
+
+
+class InvalidObject(Exception):
+    """"""
+
+
+class InvalidSearchIndex(Exception):
+    """"""
+
+
+class NodeNotFound(Exception):
+    """"""

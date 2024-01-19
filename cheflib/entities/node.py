@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# File: __init__.py
+# File: cheflib.py
 #
 # Copyright 2024 Daan de Goede, Costas Tyfoxylos
 #
@@ -18,15 +18,38 @@
 #
 
 """
+Chef node entity.
+
 .. _Google Python Style Guide:
-   http://google.github.io/styleguide/pyguide.html
+   https://google.github.io/styleguide/pyguide.html
+
 """
 
-__author__ = 'Daan de Goede <ddegoede@schubergphilis.com>, Costas Tyfoxylos <ctyfoxylos@schubergphilis.com>'
-__docformat__ = 'google'
-__date__ = '18-01-2024'
-__copyright__ = 'Copyright 2024, Daan de Goede, Costas Tyfoxylos'
-__license__ = 'Apache Software License 2.0'
-__maintainer__ = 'Daan de Goede, Costas Tyfoxylos'
-__email__ = '<ddegoede@schubergphilis.com>, <ctyfoxylos@schubergphilis.com>'
-__status__ = 'Development'  # "Prototype", "Development", "Production".
+from dataclasses import dataclass
+
+from .base import ChefObject
+
+
+@dataclass
+class Node(ChefObject):
+    """"""
+
+    @property
+    def ip_address(self):
+        return self._data.get('ip_address')
+
+    @ip_address.setter
+    def ip_address(self, value):
+        self._save_data({'ip_address': value})
+
+    def update_attributes(self, attrs):
+        self._data.update(attrs)
+        self._save_data(self._data)
+
+    @property
+    def attributes(self):
+        return self._get_attributes()
+
+    def _get_attributes(self):
+        self._session.get(self.url)
+
