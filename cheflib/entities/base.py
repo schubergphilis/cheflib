@@ -32,6 +32,14 @@ from chefsessionlib import ChefSession
 
 from cheflib.cheflibexceptions import InvalidObject
 
+ENTITY_URI = {
+    'client': 'clients',
+    'cookbook': 'cookbooks',
+    'databag': 'data',
+    'environment': 'environments',
+    'node': 'nodes',
+    'role': 'roles'
+}
 
 @dataclass
 class ChefObject:

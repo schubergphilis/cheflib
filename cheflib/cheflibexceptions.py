@@ -46,3 +46,15 @@ class InvalidSearchIndex(Exception):
 
 class NodeNotFound(Exception):
     """"""
+
+
+class CreateFailed(Exception):
+    """"""
+
+
+class DeleteFailed(Exception):
+    """"""
+
+
+class UnAuthorized(Exception):
+    """"""
