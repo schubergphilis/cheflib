@@ -27,9 +27,9 @@ Chef role entity.
 
 from dataclasses import dataclass
 
-from .base import ChefObject
+from .base import Entity
 
 
 @dataclass
-class Role(ChefObject):
+class Role(Entity):
     """"""

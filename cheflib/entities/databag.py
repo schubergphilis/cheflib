@@ -45,9 +45,9 @@ GET: /organizations/NAME/data/NAME/ITEM
 
 from dataclasses import dataclass
 
-from .base import ChefObject
+from .base import Entity
 
 
 @dataclass
-class DataBag(ChefObject):
+class DataBag(Entity):
     """"""

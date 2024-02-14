@@ -35,8 +35,8 @@ __maintainer__ = 'Daan de Goede, Costas Tyfoxylos'
 __email__ = '<ddegoede@schubergphilis.com>, <ctyfoxylos@schubergphilis.com>'
 __status__ = 'Development'  # "Prototype", "Development", "Production".
 
-from .base import (ChefObject,
-                   ENTITY_URI)
+from .base import Entity
+from .base import EntityManager
 from .client import Client
 from .cookbook import Cookbook
 from .databag import DataBag
@@ -45,8 +45,8 @@ from .node import Node
 from .role import Role
 
 # This is to 'use' the module(s), so lint doesn't complain
-assert ChefObject
-assert ENTITY_URI
+assert Entity
+assert EntityManager
 assert Client
 assert Cookbook
 assert DataBag

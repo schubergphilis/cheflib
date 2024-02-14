@@ -50,11 +50,11 @@ GET /organizations/NAME/cookbooks
 
 from dataclasses import dataclass
 
-from .base import ChefObject
+from .base import Entity
 
 
 @dataclass
-class Cookbook(ChefObject):
+class Cookbook(Entity):
     """"""
 
     @property

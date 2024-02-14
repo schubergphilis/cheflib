@@ -26,17 +26,17 @@ Main code for cheflib.
 """
 
 import logging
-from requests import Response
 from collections.abc import Generator
+
 from chefsessionlib import ChefSession
-from cheflib.entities import (ChefObject,
+from cheflib.entities import (Entity,
+                              EntityManager,
                               Client,
                               Cookbook,
                               DataBag,
                               Environment,
                               Node,
-                              Role,
-                              ENTITY_URI)
+                              Role)
 
 from .cheflibexceptions import (NodeNotFound,
                                 InvalidSearchIndex,
@@ -63,18 +63,18 @@ LOGGER.addHandler(logging.NullHandler())
 class Chef:
     """Client to the Chef API.
 
-    Most calls will require authorization. Use the authenticate()
-    method to authorize this client's session.
+    Uses ChefSessionLib to authenticate all calls to the chef server.
+
     """
 
     def __init__(self,
-                 endpoint,
-                 organization,
-                 user_id,
-                 private_key_contents,
-                 client_version='12.0.2',
-                 authentication_version='1.0',
-                 api_version=1):
+                 endpoint: str,
+                 organization: str,
+                 user_id: str,
+                 private_key_contents: str,
+                 client_version: str = '12.0.2',
+                 authentication_version: str = '1.3',
+                 api_version: int = 1):
         self.base_url = endpoint
         self.organization = organization
         self._search_indexes = None
@@ -97,72 +97,22 @@ class Chef:
                               api_version)
         # The next call has dual functionality, we test authentication and retrieve the allowed search indexes
         response = session.get(f'{self._organization_url}/search')
-        self.search_indexes = response.json()
+        self._search_indexes = response.json()
         return session
 
-    @property
-    def search_indexes(self):
-        """Return the search indexes"""
-        return self._search_indexes
-
-    @search_indexes.setter
-    def search_indexes(self, value):
-        """Set the search indexes"""
-        self._search_indexes = [*value]
+    def _create(self, url: str, data: dict) -> dict:
+        """Create entity"""
+        response = self.session.post(url, json=data)
+        if not response.ok:
+            raise CreateFailed(f"Failed to create '{data['name']}, reason:\n{response.text}")
+        return response.json()
 
     @property
     def _organization_url(self) -> str:
         """Returns the full organization url"""
         return f'{self.base_url}/organizations/{self.organization}'
 
-    def _organization_entity_url(self, entity: str) -> str:
-        """Returns the full organization url with entity base"""
-        return f'{self.base_url}/organizations/{self.organization}/{ENTITY_URI[entity]}'
-
-    def _create(self, entity: str, data: dict) -> dict:
-        """Create entity"""
-        url = self._organization_entity_url(entity)
-        response = self.session.post(url, json=data)
-        if not response.ok:
-            raise CreateFailed(f"Failed to create {entity} with name '{data['name']}, reason:\n{response.text}")
-        return response.json()
-
-    def _delete(self, entity: str, co: ChefObject) -> Response:
-        """Delete entity"""
-        response = self.session.delete(co._url)  # noqa
-        if not response.ok:
-            raise DeleteFailed(f"Failed to delete {entity} with name '{co.name}, reason:\n{response.text}")
-        return response
-
-    @property
-    def nodes(self) -> Generator:
-        """List nodes"""
-        url = f'{self._organization_url}/nodes'
-        # yield from (Node(self.session, name, url) for data in self.session.get(url).json())
-        yield from (Node(self.session, key, value)
-                    for key, value in self.session.get(url).json().items())
-
-    def get_node_by_name(self, name) -> Node:
-        """"""
-        return next((node for node in self.nodes if node.name.lower() == name.lower()), None)
-
-    def get_node_by_ip_address(self, address) -> Node:
-        """Use search get node by IP address"""
-        node = self._search('node', f'ipaddress:{address}')
-        return node
-
-    def create_node(self, name: str) -> Node:
-        """Create node"""
-        data = {'name': name}
-        resp = self._create('node', data)
-        return Node(self.session, name, resp['uri'])
-
-    def delete_node(self, node: Node) -> bool:
-        """Delete node"""
-        resp = self._delete('node', node)
-        return resp.ok
-
-    def _search(self, index, query, search_filter=None):
+    def _search(self, index, query, keys: dict = None):
         """Search chef"""
 
         """
@@ -171,11 +121,147 @@ class Chef:
         """
         rows = 1000
         start = 0
-        if index not in self.search_indexes:
+        if index not in self._search_indexes:
             raise InvalidSearchIndex(f"'{index}' is not a valid search index!")
+        url = f'{self._organization_url}/search/{index}'
         params = {'q': query,
                   'rows': rows,
                   'start': start}
-        url = f'{self._organization_url}/search/{index}'
-        resp = self.session.get(url, params=params).json()
-        return resp
+        if keys:
+            response = self.session.post(url, params=params, json=keys)
+            return response.json()
+        response = self.session.get(url, params=params)
+        return response.json()
+
+    @property
+    def clients(self) -> Generator:
+        """List clients
+
+        Returns:
+            Generator for clients
+
+        """
+        url = f'{self._organization_url}/clients'
+        yield from EntityManager(self.session, 'Client', url, 'name')
+
+    @property
+    def cookbooks(self) -> Generator:
+        """This represents knife cookbook list
+
+        Returns:
+            All cookbooks
+
+        """
+        url = f'{self._organization_url}/cookbooks'
+        yield from EntityManager(self.session, 'Cookbook', url, 'name')
+
+    @property
+    def data_bags(self) -> Generator:
+        """List data bagss
+
+        Returns:
+            Generator for data bags
+
+        """
+        url = f'{self._organization_url}/data'
+        yield from EntityManager(self.session, 'DataBag', url, 'name')
+
+    @property
+    def environments(self) -> Generator:
+        """List environments
+
+        Returns:
+            Generator for environments
+
+        """
+        url = f'{self._organization_url}/environments'
+        yield from EntityManager(self.session, 'Environment', url, 'name')
+
+    @property
+    def nodes(self) -> Generator:
+        """List nodes
+
+        Returns:
+            Generator for nodes
+
+        """
+        url = f'{self._organization_url}/nodes'
+        yield from EntityManager(self.session, 'Node', url, 'name')
+
+    def create_node(self, name: str, data: dict = None) -> Node:
+        """Create node"""
+        data = data or {}
+        data.update({'name': name})
+        resp = self._create(f'{self._organization_url}/nodes', data)
+        return Node(self.session, name, resp['uri'])
+
+    def delete_node_by_name(self, name: str) -> bool:
+        """Delete node
+        """
+        node = self.get_node_by_name(name)
+        return node.delete()
+
+    def search_nodes(self, query: str = '*:*', keys: dict = None):
+        """Search nodes
+
+        Args:
+            query: Chef search query
+            keys: dict with attribute names to return in the results
+
+            keys example:
+                {
+                    'name': [ 'name' ],
+                    'ip': [ 'ipaddress' ],
+                    'kernel_version': [ 'kernel', 'version' ]
+                }
+
+        Returns:
+            a list of Nodes.
+        """
+        url = f'{self._organization_url}/search/node'
+        yield from EntityManager(self.session, 'Node', url, 'name').filter(query, keys)
+
+    def get_node_by_name(self, name: str) -> Node:
+        """Find Node by name
+
+        Args:
+            name:
+
+        Returns:
+            Node: Node object
+
+        """
+
+        return next((node for node in self.nodes if node.name.lower() == name.lower()), None)
+
+    def get_node_by_ip_address(self, ipaddress) -> Node:
+        """
+        Use search get node by IP address
+
+        Args:
+            ipaddress
+
+        Returns:
+            Node: Node object
+
+        """
+        node = self._search('node', f'ipaddress:{ipaddress}')
+        return node
+
+    @property
+    def roles(self) -> Generator:
+        """List roles
+
+        Returns:
+            Generator for roles
+
+        """
+        url = f'{self._organization_url}/roles'
+        yield from EntityManager(self.session, 'Role', url, 'name')
+
+    def raw(self, entity_type, method='get', **kwargs):
+        """Get raw data
+        """
+        url = f'{self._organization_url}/{entity_type}'
+        response = getattr(self.session, method.lower())(url, **kwargs)
+        return response

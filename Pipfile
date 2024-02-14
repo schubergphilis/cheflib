@@ -22,4 +22,4 @@ toml = ">=0.1,<1.0"
 typing-extensions = ">=4.0,<5.0"
 
 [packages]
-chefsessionlib = {editable = true, ref = "main", git = "git+ssh://git@github.com/schubergphilis/chefsessionlib.git"}
+chefsessionlib = {editable = true, ref = "449754ca50f056fb7b3e37b82a40bebc4a7b67c7", git = "git+ssh://git@github.com/schubergphilis/chefsessionlib.git"}

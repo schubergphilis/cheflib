@@ -40,10 +40,21 @@ from .cheflib import Chef
 from .cheflibexceptions import (InvalidObject,
                                 InvalidSearchIndex,
                                 NodeNotFound)
-
+from .entities import (Client,
+                       Cookbook,
+                       DataBag,
+                       Environment,
+                       Node,
+                       Role)
 # This is to 'use' the module(s), so lint doesn't complain
 assert __version__
 assert Chef
 assert InvalidObject
 assert InvalidSearchIndex
 assert NodeNotFound
+assert Client
+assert Cookbook
+assert DataBag
+assert Environment
+assert Node
+assert Role

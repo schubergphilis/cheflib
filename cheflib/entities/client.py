@@ -75,9 +75,9 @@ The response is similar to:
 
 from dataclasses import dataclass
 
-from .base import ChefObject
+from .base import Entity
 
 
 @dataclass
-class Client(ChefObject):
+class Client(Entity):
     """"""

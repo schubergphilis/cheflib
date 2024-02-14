@@ -27,9 +27,9 @@ Chef environment entity.
 
 from dataclasses import dataclass
 
-from .base import ChefObject
+from .base import Entity
 
 
 @dataclass
-class Environment(ChefObject):
+class Environment(Entity):
     """"""
