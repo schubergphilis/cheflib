@@ -28,21 +28,25 @@ from collections.abc import Generator
 from copy import deepcopy
 from dataclasses import dataclass
 from typing import Dict, Optional
-import math
-import concurrent.futures
 
 from chefsessionlib import ChefSession
 from cheflib.cheflibexceptions import InvalidObject
 
 ENTITY_URI = {
     'client': 'clients',
+    'client_key': 'clients',
     'cookbook': 'cookbooks',
+    'cookbook_version': 'version',
     'databag': 'data',
     'environment': 'environments',
     'node': 'nodes',
     'role': 'roles'
 }
-MAX_ROWS = 1000
+
+
+def generate_entity_url(cls, organization_url: str, name: str) -> str:
+    """"""
+    return f'{organization_url}/{ENTITY_URI[cls.__name__.lower()]}/{name}'
 
 
 @dataclass
@@ -52,12 +56,22 @@ class Entity:
     _url: str
     _data: Optional[Dict] = None
 
+    @classmethod
+    def from_data(cls, chef_instance, data: Dict):
+        """"""
+        name = data.get('name', '')
+        url = data.get('url', generate_entity_url(cls, chef_instance._organization_url , name)) # noqa
+        if not name:
+            name = url.split('/')[-1]
+        return cls(chef_instance.session, name, url, data)
+
     def _save_data(self, data: dict):
         payload = deepcopy(self.data)
         payload.update(data)
         response = self._session.put(self._url, json=payload)
         if not response.ok:
-            raise InvalidObject
+            # log something
+            raise InvalidObject(response.text)
         self._data = response.json()
 
     @property
@@ -71,14 +85,14 @@ class Entity:
 
     @property
     def name(self):
-        return self.data.get('name')
+        return self._name
 
     def update_data(self):
         """"""
 
     def delete(self) -> bool:
         """Delete entity"""
-        response = self._session.delete(self._url)  # noqa
+        response = self._session.delete(self._url)
         if not response.ok:
             # log DeleteFailed(f"Failed to delete '{co.name}, reason:\n{response.text}")
             pass
@@ -89,53 +103,18 @@ class EntityManager:
     """Manages entities by making them act like iterables but also implements contains and other useful stuff."""
 
     # pylint: disable=too-many-arguments
-    def __init__(self, session, entity_object, url, primary_match_field='name'):
-        self._session = session
-        self._max_http_workers = 4
+    def __init__(self, chef_instance, entity_object, parent_name=None, primary_match_field='name'):
+        self._chef = chef_instance
         self._object_type = entity_object
-        self._primary_match_field = primary_match_field
         self._next_state = None
-        self._entities_keys = None
-        self._url = url
+        self._parent_name = parent_name
+        self._primary_match_field = primary_match_field
 
     @property
     def _objects(self):
         return self._get_entity_objects()
 
-    def _get_paginated_response(self, url, params=None, keys=None) -> Generator:
-        method = getattr(self._session, 'get')
-        if keys is not None:
-            method = getattr(self._session, 'post')
-        else:
-            keys = {}
-        if not params:
-            params = {}
-        response = method(url, params=params, json=keys)
-        if not response.ok:
-            # log shizzle
-            return False
-        response_data = response.json()
-        total = response_data.get('total', 0)
-        rows = params.get('rows', MAX_ROWS)
-        # self._logger.debug('Calculated that there are %s pages to get', page_count)
-        yield from response_data.get('rows', response_data.items())
-        if total > rows:
-            with concurrent.futures.ThreadPoolExecutor(max_workers=self._max_http_workers) as executor:
-                futures = []
-                for start in range(rows, total, rows):
-                    params.update({'start': start})
-                    futures.append(executor.submit(method, url, params=params.copy(), json=keys.copy()))
-                for future in concurrent.futures.as_completed(futures):
-                    try:
-                        response = future.result()
-                        response_data = response.json()
-                        response.close()
-                        yield from response_data.get('rows')
-                    except Exception:  # pylint: disable=broad-except
-                        # self._logger.exception('Future failed...')
-                        pass
-
-    def _get_entity_objects(self, query: str = None, keys: dict = None, rows: int = MAX_ROWS) -> Generator:
+    def _get_entity_objects(self, query: str = None, keys: dict = None) -> Generator:
         """Get the entity objects from the chef server
 
         If a query is provided it will use the search API otherwise it will use the default entity API
@@ -153,25 +132,21 @@ class EntityManager:
         if not entity_object:
             # log Could not find 'entity'!
             return None
-        url = self._url
-        params = None
+        # TODO remove row_count before publication, just in place to force pagination.
+        entities = self._chef._get_paginated_response(entity_object, query=query, keys=keys, max_row_count=20) # noqa
         if query is not None:
-            params = {'q': query,
-                      'rows': rows,
-                      'start': 0}
-        entities = self._get_paginated_response(url, params=params, keys=keys)
-        if query is not None:
-            yield from (entity_object(self._session, entity['data']['name'], entity['url'])
-                        for entity in entities)
+            result = (entity_object.from_data(self._chef, entity.get('data', entity))
+                      for entity in entities)
         else:
-            yield from (entity_object(self._session, key, value)
-                        for key, value in entities)
+            result = (entity_object(self._chef.session, key, value)
+                      for key, value in entities)
+        yield from result
 
     def __iter__(self):
         return self._objects
 
     def __contains__(self, value):
-        return next(self.filter(f'{self._primary_match_field}:{value}'), False)
+        return next(self.filter(query=f'{self._primary_match_field}:{value}', keys={'name': ['name']}), False)
 
     def filter(self, query: str, keys: dict = None) -> Generator:
         """Implements filtering based on the filtering capabilities of chef.
@@ -184,7 +159,4 @@ class EntityManager:
               Generator of the objects retrieved based on the filtering.
 
         """
-        if keys is None:
-            keys = {'name': ['name']}
-
-        return self._get_entity_objects(query, keys, 20)
+        return self._get_entity_objects(query, keys)

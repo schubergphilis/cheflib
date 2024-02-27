@@ -27,9 +27,11 @@ Main code for cheflib.
 
 import logging
 from collections.abc import Generator
+import concurrent.futures
 
 from chefsessionlib import ChefSession
-from cheflib.entities import (Entity,
+from cheflib.entities import (ENTITY_URI,
+                              Entity,
                               EntityManager,
                               Client,
                               Cookbook,
@@ -59,6 +61,8 @@ LOGGER_BASENAME = '''cheflib'''
 LOGGER = logging.getLogger(LOGGER_BASENAME)
 LOGGER.addHandler(logging.NullHandler())
 
+MAX_ROW_COUNT = 1000
+
 
 class Chef:
     """Client to the Chef API.
@@ -78,6 +82,7 @@ class Chef:
         self.base_url = endpoint
         self.organization = organization
         self._search_indexes = None
+        self._max_http_workers = 4
         self.session = self._get_authenticated_session(user_id,
                                                        private_key_contents,
                                                        client_version,
@@ -100,6 +105,36 @@ class Chef:
         self._search_indexes = response.json()
         return session
 
+    def _get_paginated_response(self, entity_object, query=None, keys=None, max_row_count: int = MAX_ROW_COUNT) -> Generator:
+        http_method = getattr(self.session, 'post' if keys else 'get')
+        keys = keys or {}
+        params = {'q': query, 'rows': max_row_count, 'start': 0} if query else {}
+        url = self._request_url(entity_object.__name__, params)
+        response = http_method(url, params=params, json=keys)
+        if not response.ok:
+            # log shizzle
+            return False
+        response_data = response.json()
+        total = response_data.get('total', 0)
+        row_count = params.get('rows', MAX_ROW_COUNT)
+        # self._logger.debug('Calculated that there are %s pages to get', page_count)
+        yield from response_data.get('rows', response_data.items())
+        if total > row_count:
+            with concurrent.futures.ThreadPoolExecutor(max_workers=self._max_http_workers) as executor:
+                futures = []
+                for start in range(row_count, total, row_count):
+                    params.update({'start': start})
+                    futures.append(executor.submit(http_method, url, params=params.copy(), json=keys.copy()))
+                for future in concurrent.futures.as_completed(futures):
+                    try:
+                        response = future.result()
+                        response_data = response.json()
+                        response.close()
+                        yield from response_data.get('rows')
+                    except Exception:  # pylint: disable=broad-except
+                        # self._logger.exception('Future failed...')
+                        pass
+
     def _create(self, url: str, data: dict) -> dict:
         """Create entity"""
         response = self.session.post(url, json=data)
@@ -107,86 +142,108 @@ class Chef:
             raise CreateFailed(f"Failed to create '{data['name']}, reason:\n{response.text}")
         return response.json()
 
+    def _request_url(self, entity: str, params: dict = None) -> str:
+        """Returns the full organization url"""
+        return f'{self._organization_url}/search/{entity.lower()}' if params else f'{self._organization_url}/{ENTITY_URI[entity.lower()]}'
+
     @property
     def _organization_url(self) -> str:
         """Returns the full organization url"""
         return f'{self.base_url}/organizations/{self.organization}'
 
-    def _search(self, index, query, keys: dict = None):
-        """Search chef"""
-
-        """
-        Response from server contains:
-        total, start and rows (containing the data per found object)
-        """
-        rows = 1000
-        start = 0
-        if index not in self._search_indexes:
-            raise InvalidSearchIndex(f"'{index}' is not a valid search index!")
-        url = f'{self._organization_url}/search/{index}'
-        params = {'q': query,
-                  'rows': rows,
-                  'start': start}
-        if keys:
-            response = self.session.post(url, params=params, json=keys)
-            return response.json()
-        response = self.session.get(url, params=params)
-        return response.json()
-
     @property
-    def clients(self) -> Generator:
+    def clients(self) -> EntityManager:
         """List clients
 
         Returns:
             Generator for clients
 
         """
-        url = f'{self._organization_url}/clients'
-        yield from EntityManager(self.session, 'Client', url, 'name')
+        return EntityManager(self, 'Client', self._organization_url)
+
+    def create_client(self, name: str, data: dict = None) -> Client:
+        """Create client"""
+        data = data or {}
+        data.update({'name': name})
+        resp = self._create(f'{self._organization_url}/clients', data)
+        return Client(self.session, name, resp['uri'], resp['chef_key'])
+
+    def delete_client_by_name(self, name: str) -> bool:
+        """Delete client
+        """
+        client = self.get_client_by_name(name)
+        return client.delete()
+
+    def search_clients(self, query: str = '*:*', keys: dict = None):
+        """Search clients
+
+        Args:
+            query: Chef search query
+            keys: dict with attribute names to return in the results
+
+            keys example:
+                {
+                    'name': [ 'name' ],
+                    'ip': [ 'ipaddress' ],
+                    'kernel_version': [ 'kernel', 'version' ]
+                }
+
+        Returns:
+            a list of Clients.
+        """
+        return EntityManager(self, 'Client', self._organization_url, 'name').filter(query, keys)
+
+    def get_client_by_name(self, name: str) -> Client:
+        """Find Client by name
+
+        Args:
+            name:
+
+        Returns:
+            Client: Client object
+
+        """
+        return next((client for client in self.clients if client.name.lower() == name.lower()), None)
 
     @property
-    def cookbooks(self) -> Generator:
+    def cookbooks(self) -> EntityManager:
         """This represents knife cookbook list
 
         Returns:
             All cookbooks
 
         """
-        url = f'{self._organization_url}/cookbooks'
-        yield from EntityManager(self.session, 'Cookbook', url, 'name')
+        return EntityManager(self, 'Cookbook', self._organization_url, 'name')
 
     @property
-    def data_bags(self) -> Generator:
+    def data_bags(self) -> EntityManager:
         """List data bagss
 
         Returns:
             Generator for data bags
 
         """
-        url = f'{self._organization_url}/data'
-        yield from EntityManager(self.session, 'DataBag', url, 'name')
+        return EntityManager(self, 'DataBag', self._organization_url, 'name')
 
     @property
-    def environments(self) -> Generator:
+    def environments(self) -> EntityManager:
         """List environments
 
         Returns:
             Generator for environments
 
         """
-        url = f'{self._organization_url}/environments'
-        yield from EntityManager(self.session, 'Environment', url, 'name')
+        return EntityManager(self, 'Environment', self._organization_url, 'name')
 
     @property
-    def nodes(self) -> Generator:
+    def nodes(self) -> EntityManager:
         """List nodes
 
         Returns:
             Generator for nodes
 
         """
-        url = f'{self._organization_url}/nodes'
-        yield from EntityManager(self.session, 'Node', url, 'name')
+        return EntityManager(self, 'Node', self._organization_url, 'name')
 
     def create_node(self, name: str, data: dict = None) -> Node:
         """Create node"""
@@ -218,8 +275,7 @@ class Chef:
         Returns:
             a list of Nodes.
         """
-        url = f'{self._organization_url}/search/node'
-        yield from EntityManager(self.session, 'Node', url, 'name').filter(query, keys)
+        return EntityManager(self, 'Node', self._organization_url, 'name').filter(query, keys)
 
     def get_node_by_name(self, name: str) -> Node:
         """Find Node by name
@@ -231,7 +287,6 @@ class Chef:
             Node: Node object
 
         """
-
         return next((node for node in self.nodes if node.name.lower() == name.lower()), None)
 
     def get_node_by_ip_address(self, ipaddress) -> Node:
@@ -245,23 +300,21 @@ class Chef:
             Node: Node object
 
         """
-        node = self._search('node', f'ipaddress:{ipaddress}')
-        return node
+        return next(EntityManager(self, 'Node', self._organization_url, 'name').filter(f'ipaddress:{ipaddress}'))
 
     @property
-    def roles(self) -> Generator:
+    def roles(self) -> EntityManager:
         """List roles
 
         Returns:
             Generator for roles
 
         """
-        url = f'{self._organization_url}/roles'
-        yield from EntityManager(self.session, 'Role', url, 'name')
+        return EntityManager(self, 'Role', self._organization_url, 'name')
 
-    def raw(self, entity_type, method='get', **kwargs):
+    def raw(self, uri, method='get', **kwargs):
         """Get raw data
         """
-        url = f'{self._organization_url}/{entity_type}'
+        url = f'{self._organization_url}/{uri}'
         response = getattr(self.session, method.lower())(url, **kwargs)
         return response

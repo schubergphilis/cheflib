@@ -18,9 +18,9 @@
 #
 
 """
-Chef client entity.
+Chef client key entity.
 
-GET: /organizations/NAME/clients
+GET: /organizations/NAME/clients/NAME/keys
 This method has no request body.
 Response:
 {
@@ -74,64 +74,17 @@ The response is similar to:
 """
 
 from dataclasses import dataclass
-from typing import Dict
 
 from cachetools import keys
 
-from .base import (Entity,
-                   EntityManager)
-from .client_key import ClientKey
+from .base import Entity
 from cheflib.cheflibexceptions import InvalidObject
 
 
 @dataclass
-class Client(Entity):
+class ClientKey(Entity):
     """"""
-    _keys: EntityManager = None
 
     @property
-    def expiration_date(self):
-        return self.data.get('expiration_date')
-
-    @property
-    def org_name(self):
-        return self.data.get('org_name')
-
-    @property
-    def private_key(self):
-        return self.data.get('private_key')
-
-    @property
-    def public_key(self):
-        return self.data.get('public_key')
-
-    @property
-    def validator(self):
-        return self.data.get('validator')
-
-    @property
-    def _data_keys(self):
-        if self._keys is None:
-            # , parent_name=f'{self.name}/keys'
-            self._keys = EntityManager(self._session, 'ClientKey', self._url)
-        return self._keys
-
-    @property
-    def keys(self):
-        return self._data_keys
-
-    def delete_key(self, key_name: str) -> bool:
-        """Delete entity"""
-        if not key_name in self._keys:
-            # log keyname not found!
-            return False
-        key = self._keys.get(key_name)
-        response = self._session.delete(self._url)  # noqa
-        if not response.ok:
-            # log DeleteFailed(f"Failed to delete '{co.name}, reason:\n{response.text}")
-            pass
-        return response.ok
-
-    def get_key_by_name(self, name: str) -> Dict:
-        """Get client key by name"""
-        return next(self.keys.filter(f'name:{name}'))
+    def expired(self):
+        return self.data.get('expired')

@@ -62,15 +62,15 @@ class Node(Entity):
 
     @property
     def ip_address(self):
-        return self._data.get('ip_address')
+        return self.data.get('ip_address')
 
     @property
     def automatic(self):
-        return self._data.get('automatic')
+        return self.data.get('automatic')
 
     @property
     def chef_environment(self):
-        return self._data.get('chef_environment')
+        return self.data.get('chef_environment')
 
     @chef_environment.setter
     def chef_environment(self, value):
@@ -78,11 +78,11 @@ class Node(Entity):
 
     @property
     def default(self):
-        return self._data.get('default')
+        return self.data.get('default')
 
     @property
     def normal(self):
-        return self._data.get('normal')
+        return self.data.get('normal')
 
     @normal.setter
     def normal(self, value):
@@ -90,11 +90,11 @@ class Node(Entity):
 
     @property
     def override(self):
-        return self._data.get('override')
+        return self.data.get('override')
 
     @property
     def run_list(self):
-        return self._data.get('run_list')
+        return self.data.get('run_list')
 
     @run_list.setter
     def run_list(self, value):
