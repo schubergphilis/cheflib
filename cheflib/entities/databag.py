@@ -44,10 +44,35 @@ GET: /organizations/NAME/data/NAME/ITEM
 """
 
 from dataclasses import dataclass
+from typing import Optional
 
+from .databagitem import DataBagItem
 from .base import Entity
 
 
 @dataclass
 class DataBag(Entity):
     """"""
+    @property
+    def get_item_names(self):
+        return self.data.keys()
+
+    def get_item_by_name(self, name: str, secret: bytes = None) -> [DataBagItem, None]:
+        """"""
+        url = self.data.get(name, None)
+        if not url:
+            # TODO log invalid name
+            return None
+        return DataBagItem(self._chef, name, url, _secret=secret)
+
+    def create_item(self, name, data, secret=None) -> Optional[DataBagItem]:
+        """"""
+        body = {'id': name}
+        response = self._chef.session.post(self._url, json=body)
+        if not response.ok:
+            # log shizzle
+            return None
+        db_item = DataBagItem(self._chef, name, f'{self._url}/{name}')
+        db_item.secret = secret
+        db_item.data = data
+        return db_item

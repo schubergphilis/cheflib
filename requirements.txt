@@ -1,9 +1,18 @@
-# 
+#
 # Please do not manually update this file since the requirements are managed
-# by pipenv through Pipfile and Pipfile.lock . 
+# by pipenv through Pipfile and Pipfile.lock .
 #
 # This file is created and managed automatically by the template and it is left
 # here only for backwards compatibility reasons with python's ecosystem.
 #
 # Please use Pipfile to update the requirements.
 #
+
+emoji==2.10.0
+gitwrapperlib==1.0.4
+sphinx==7.2.6
+betamax==0.8.1
+chefsessionlib==0.1.1
+setuptools==69.0.3
+rsa==4.9
+pycryptodome==3.20.0

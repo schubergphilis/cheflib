@@ -51,12 +51,23 @@ GET /organizations/NAME/cookbooks
 from dataclasses import dataclass
 
 from .base import Entity
+from cheflib.cheflibexceptions import InvalidObject
 
 
 @dataclass
 class Cookbook(Entity):
     """"""
 
+    # Overriding the default data property, because
+    # get result for cookbooks differs from default result
+    @property
+    def _post_data(self):
+        if self._data is None:
+            response = self._chef.session.get(self._url)
+            if not response.ok:
+                raise InvalidObject
+            self._data = response.json()[self._name]
+
     @property
     def versions(self):
-        return self._data.get('versions')
+        return self.data.get('versions')

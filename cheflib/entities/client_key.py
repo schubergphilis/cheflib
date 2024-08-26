@@ -74,11 +74,8 @@ The response is similar to:
 """
 
 from dataclasses import dataclass
-
-from cachetools import keys
-
+from datetime import datetime
 from .base import Entity
-from cheflib.cheflibexceptions import InvalidObject
 
 
 @dataclass
@@ -86,5 +83,18 @@ class ClientKey(Entity):
     """"""
 
     @property
+    def public_key(self):
+        return self.data.get('public_key')
+
+    @property
+    def expiration_date(self):
+        return self.data.get('expiration_date')
+
+    @property
     def expired(self):
-        return self.data.get('expired')
+        if self.expiration_date == 'infinity':
+            return False
+        datetime_format = '%Y-%m-%dT%H:%M:%SZ'
+        expiration_timestamp = datetime.strptime(self.expiration_date, datetime_format)
+        current_timestamp = self._chef.get_current_timestamp()
+        return expiration_timestamp < current_timestamp

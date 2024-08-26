@@ -74,20 +74,16 @@ The response is similar to:
 """
 
 from dataclasses import dataclass
-from typing import Dict
+from typing import Dict, Optional
 
-from cachetools import keys
-
-from .base import (Entity,
-                   EntityManager)
+from .base import Entity
 from .client_key import ClientKey
-from cheflib.cheflibexceptions import InvalidObject
 
 
 @dataclass
 class Client(Entity):
     """"""
-    _keys: EntityManager = None
+    _keys: Optional[Dict] = None
 
     @property
     def expiration_date(self):
@@ -110,28 +106,41 @@ class Client(Entity):
         return self.data.get('validator')
 
     @property
-    def _data_keys(self):
-        if self._keys is None:
-            # , parent_name=f'{self.name}/keys'
-            self._keys = EntityManager(self._session, 'ClientKey', self._url)
-        return self._keys
-
-    @property
     def keys(self):
-        return self._data_keys
-
-    def delete_key(self, key_name: str) -> bool:
-        """Delete entity"""
-        if not key_name in self._keys:
-            # log keyname not found!
-            return False
-        key = self._keys.get(key_name)
-        response = self._session.delete(self._url)  # noqa
+        url = f'{self._url}/keys'
+        response = self._chef.session.get(url)
         if not response.ok:
-            # log DeleteFailed(f"Failed to delete '{co.name}, reason:\n{response.text}")
-            pass
-        return response.ok
+            self._logger.debug(f'Unable to retrieve Keys url: "{url}", reason: "{response.text}"')
+            return None
+        yield from (ClientKey(self._chef, key['name'], key['uri']) for key in response.json())
 
-    def get_key_by_name(self, name: str) -> Dict:
+    def create_key(self, name, data) -> Optional[ClientKey]:
+        """"""
+        body = {'name': name}
+        body.update(data)
+        response = self._chef.session.post(f'{self._url}/keys', json=body)
+        if not response.ok:
+            self._logger.debug(f'Key creation failed, body: "{body}", reason: "{response.text}"')
+            return None
+        response_data = response.json()
+        self._keys = None
+        return ClientKey(self._chef, name, response_data['uri'])
+
+    def get_key_by_name(self, name: str) -> ClientKey:
         """Get client key by name"""
-        return next(self.keys.filter(f'name:{name}'))
+        return next((client_key for client_key in self.keys if client_key.name.lower() == name.lower()), None)
+
+    def delete_key_by_name(self, name: str) -> bool:
+        """Delete client key by name"""
+        key = self.get_key_by_name(name)
+        self._keys = None
+        return key.delete()
+
+    def reregister(self) -> bool:
+        # TODO this is not working in the current API, needs attention
+        # http_api.put("clients/#{name}", name: name, admin: admin, validator: validator, private_key: true )
+        data = {'name': self.name, 'validator': self.validator, 'create_key': True}
+        response = self._chef.session.put(self._url, json=data)
+        if not response.ok:
+            self._logger.info(response.text)
+        return response.ok

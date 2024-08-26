@@ -41,6 +41,7 @@ from .cheflibexceptions import (InvalidObject,
                                 InvalidSearchIndex,
                                 NodeNotFound)
 from .entities import (Client,
+                       ClientKey,
                        Cookbook,
                        DataBag,
                        Environment,
@@ -53,6 +54,7 @@ assert InvalidObject
 assert InvalidSearchIndex
 assert NodeNotFound
 assert Client
+assert ClientKey
 assert Cookbook
 assert DataBag
 assert Environment

@@ -33,3 +33,36 @@ from .base import Entity
 @dataclass
 class Environment(Entity):
     """"""
+
+    @property
+    def description(self):
+        return self.data.get('description')
+
+    @description.setter
+    def description(self, value):
+        self._save_data({'description': value})
+
+    @property
+    def default_attributes(self):
+        return self.data.get('default_attributes')
+
+    @default_attributes.setter
+    def default_attributes(self, value):
+        self._save_data({'default_attributes': value})
+
+    @property
+    def override_attributes(self):
+        return self.data.get('override_attributes')
+
+    @override_attributes.setter
+    def override_attributes(self, value):
+        self._save_data({'override_attributes': value})
+
+    @property
+    def cookbook_versions(self):
+        return self.data.get('cookbook_versions')
+
+    @cookbook_versions.setter
+    def cookbook_versions(self, value):
+        self._save_data({'cookbook_versions': value})
+

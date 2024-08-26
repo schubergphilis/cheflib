@@ -24,77 +24,103 @@ Chef base entity.
    https://google.github.io/styleguide/pyguide.html
 
 """
+import logging
 from collections.abc import Generator
 from copy import deepcopy
 from dataclasses import dataclass
 from typing import Dict, Optional
 
-from chefsessionlib import ChefSession
 from cheflib.cheflibexceptions import InvalidObject
+from cheflib.configuration import (ENTITY_URL,
+                                   MAX_ROW_COUNT)
 
-ENTITY_URI = {
-    'client': 'clients',
-    'client_key': 'clients',
-    'cookbook': 'cookbooks',
-    'cookbook_version': 'version',
-    'databag': 'data',
-    'environment': 'environments',
-    'node': 'nodes',
-    'role': 'roles'
-}
-
-
-def generate_entity_url(cls, organization_url: str, name: str) -> str:
-    """"""
-    return f'{organization_url}/{ENTITY_URI[cls.__name__.lower()]}/{name}'
+# This is the main prefix used for logging
+LOGGER_BASENAME = 'base'
+LOGGER = logging.getLogger(LOGGER_BASENAME)
+LOGGER.addHandler(logging.NullHandler())
 
 
 @dataclass
 class Entity:
-    _session: ChefSession
+    _chef: 'Chef'  # noqa
     _name: str
     _url: str
     _data: Optional[Dict] = None
 
+    def __post_init__(self):
+        """"""
+        self._logger = logging.getLogger(f'{LOGGER_BASENAME}.{self.__class__.__name__}')
+
     @classmethod
     def from_data(cls, chef_instance, data: Dict):
         """"""
-        name = data.get('name', '')
-        url = data.get('url', generate_entity_url(cls, chef_instance._organization_url , name)) # noqa
-        if not name:
+        # the data could contain the URL to the object or the name of the object, the API is behaving one way
+        # for certain get calls and another way for other calls.
+        # If the URL is contained in the data dict, and the 'name' of the object can be extracted,
+        # or the name of the object is part of the data dict, and we need to contruct the URL manually.
+        url = data.get('url')
+        if url:
             name = url.split('/')[-1]
+        else:
+            name = data.get('name')
+            url = Entity._generate_entity_url(cls.__name__, chef_instance._organization_url , name)  # noqa
         return cls(chef_instance.session, name, url, data)
+
+    @staticmethod
+    def _generate_entity_url(class_name, organization_url: str, name: str, parent_name: str = None) -> str:
+        """"""
+        return f"{ENTITY_URL[class_name.lower()].format(organization_url=organization_url, parent_name=parent_name)}/{name}"
+
+    def _pre_save_data(self, data: Dict) -> Dict:
+        """"""
+        return data
 
     def _save_data(self, data: dict):
         payload = deepcopy(self.data)
         payload.update(data)
-        response = self._session.put(self._url, json=payload)
+        payload = self._pre_save_data(payload)
+        response = self._chef.session.put(self._url, json=payload)
         if not response.ok:
-            # log something
+            self._logger.debug(f'Unable to save data, Class: {hasattr(self, "__name__")}, url: {self._url}, '
+                               f'data: {data}, payload: {payload}')
             raise InvalidObject(response.text)
-        self._data = response.json()
+        self._data = None
+
+    @staticmethod
+    def _post_data(self):
+        """"""
+        pass
 
     @property
     def data(self):
         if self._data is None:
-            response = self._session.get(self._url)
+            response = self._chef.session.get(self._url)
             if not response.ok:
+                self._logger.debug(f'Unable to retrieve data, Class: {hasattr(self, "__name__")}, url: {self._url}')
                 raise InvalidObject
             self._data = response.json()
+        self._post_data(self)
         return self._data
+
+    @data.setter
+    def data(self, data: dict):
+        """"""
+        if not isinstance(data, dict):
+            self._logger.debug(f'"data" is not a dict, but Class: {hasattr(data, "__name__")}')
+            raise InvalidObject
+        self._data = deepcopy(data)
+        self._data.update(id=self.name)
+        self._save_data(self._data)
 
     @property
     def name(self):
         return self._name
 
-    def update_data(self):
-        """"""
-
     def delete(self) -> bool:
         """Delete entity"""
-        response = self._session.delete(self._url)
+        response = self._chef.session.delete(self._url)
         if not response.ok:
-            # log DeleteFailed(f"Failed to delete '{co.name}, reason:\n{response.text}")
+            self._logger.debug(f"Failed to delete '{self._url}, reason:\n{response.text}")
             pass
         return response.ok
 
@@ -114,7 +140,14 @@ class EntityManager:
     def _objects(self):
         return self._get_entity_objects()
 
-    def _get_entity_objects(self, query: str = None, keys: dict = None) -> Generator:
+    @staticmethod
+    def _verify_entity_url(url) -> str:
+        """"""
+        if isinstance(url, dict) and 'url' in url:
+            return url['url']
+        return url
+
+    def _get_entity_objects(self, query: str = None, keys: dict = None, max_row_count: int = MAX_ROW_COUNT) -> Generator:
         """Get the entity objects from the chef server
 
         If a query is provided it will use the search API otherwise it will use the default entity API
@@ -129,16 +162,15 @@ class EntityManager:
         """
         module = __import__('cheflib.entities')
         entity_object = getattr(module, self._object_type)
-        if not entity_object:
-            # log Could not find 'entity'!
-            return None
-        # TODO remove row_count before publication, just in place to force pagination.
-        entities = self._chef._get_paginated_response(entity_object, query=query, keys=keys, max_row_count=20) # noqa
+        entities = self._chef._get_paginated_response(entity_object, query=query, keys=keys, max_row_count=max_row_count, parent_name=self._parent_name) # noqa
+        # As mentioned in the documentation, when a 'query' was supplied, we get the responses from the search api,
+        # which returns the data in a different format. If no query was supplied we simply use the getter of the entity.
+        # This means we yield from a different generator.
         if query is not None:
             result = (entity_object.from_data(self._chef, entity.get('data', entity))
                       for entity in entities)
         else:
-            result = (entity_object(self._chef.session, key, value)
+            result = (entity_object(self._chef, key, self._verify_entity_url(value))
                       for key, value in entities)
         yield from result
 
@@ -159,4 +191,4 @@ class EntityManager:
               Generator of the objects retrieved based on the filtering.
 
         """
-        return self._get_entity_objects(query, keys)
+        return self._get_entity_objects(query)
