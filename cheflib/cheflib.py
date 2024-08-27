@@ -162,11 +162,25 @@ class Chef:
 
     @property
     def clients(self) -> EntityManager:
-        """"""
+        """List all clients
+
+        Returns:
+            Generator for all clients
+
+        """
         return EntityManager(self, 'Client', self._organization_url)
 
     def create_client(self, name: str, data: dict = None) -> Optional[Client]:
-        """"""
+        """Create a client, with specified
+
+        Args:
+            name: string, name of the client
+            data: (optional) dictionary, containing additional attributes that will be added to the client
+
+        Returns:
+            New client
+
+        """
         if data is None:
             data = {}
         if not name:
@@ -178,30 +192,60 @@ class Chef:
         return Client(self, name, resp['uri'], resp['chef_key'])
 
     def delete_client_by_name(self, name: str) -> bool:
-        """"""
+        """Deletes a client by name
+
+        Args:
+            name: string, name of the client
+
+        Returns:
+            True if deletion succeeded or False if deletion failed
+
+        """
         client = self.get_client_by_name(name)
         return client.delete()
 
-    def search_clients(self, query: str = '*:*', keys: dict = None):
-        """"""
-        return EntityManager(self, 'Client', self._organization_url, 'name').filter(query, keys)
-
     def get_client_by_name(self, name: str) -> Client:
-        """"""
+        """Gets a client by name
+
+        Args:
+            name: string, name of the client
+
+        Returns:
+            First client with specified name
+
+        """
         return next((client for client in self.clients if client.name.lower() == name.lower()), None)
 
     @property
     def cookbooks(self) -> EntityManager:
-        """"""
+        """List all cookbooks
+
+        Returns:
+            Generator for all cookbooks
+
+        """
         return EntityManager(self, 'Cookbook', self._organization_url, 'name')
 
     @property
     def data_bags(self) -> EntityManager:
-        """"""
+        """list all data bags
+
+        Returns:
+            Generator for all data bags
+
+        """
         return EntityManager(self, 'DataBag', self._organization_url, 'name')
 
     def create_data_bag(self, name: str) -> Optional[DataBag]:
-        """"""
+        """Create a data bag
+
+        Args:
+            name: string, name of the data bag
+
+        Returns:
+            New data bag
+
+        """
         if not name:
             # log shizzle
             return None
@@ -211,87 +255,224 @@ class Chef:
         return DataBag(self, name, resp['uri'])
 
     def get_data_bag_by_name(self, name: str) -> DataBag:
-        """"""
+        """Gets a data bag by name
+
+        Args:
+            name: string, name of the data bag
+
+        Returns:
+            First data bag with specified name
+
+        """
         return next((data_bag for data_bag in self.data_bags if data_bag.name.lower() == name.lower()), None)
 
     def get_data_bag_item_by_name(self, bag_name: str, name: str, secret: bytes = None) -> DataBag:
-        """"""
+        """Gets a data bag item by name
+
+        Args:
+            bag_name: string, name of the data bag
+            name: string, name of the item
+            secret: (optional) bytes, secret key to encrypt/decrypt the data bag
+
+        Returns:
+            Data bag item with specified name
+
+        """
         db = self.get_data_bag_by_name(bag_name)
         return db.get_item_by_name(name, secret)
 
     @property
     def environments(self) -> EntityManager:
-        """"""
+        """List all environments
+
+        Returns:
+            Generator for all environments
+
+        """
         return EntityManager(self, 'Environment', self._organization_url, 'name')
 
     def create_environment(self, name: str, data: dict = None) -> Environment:
-        """"""
+        """Create a environment, with specified name
+
+        Args:
+            name: string, name of the environment
+            data: (optional) dictionary, containing additional attributes that will be added to the environment
+
+        Returns:
+            New environment
+
+        """
         data = data or {}
         data.update(name=name)
         resp = self._create(f'{self._organization_url}/environments', data)
         return Environment(self, name, resp['uri'])
 
     def delete_environment_by_name(self, name: str) -> bool:
-        """"""
+        """Delete environment with specifief name
+
+        Args:
+            name: string, name of environment
+
+        Returns:
+            True if deletion succeeded or False if deletion failed
+
+        """
         environment = self.get_environment_by_name(name)
         return environment.delete()
 
     def get_environment_by_name(self, name: str) -> Environment:
-        """"""
+        """Get environment with specified name
+
+        Args:
+            name: string, name of the environment
+
+        Returns:
+            First environment with specified name
+
+        """
         return next((environment for environment in self.environments if environment.name.lower() == name.lower()), None)
 
     @property
     def nodes(self) -> EntityManager:
-        """"""
+        """List all nodes
+
+        Returns:
+            Generator for all nodes
+
+        """
         return EntityManager(self, 'Node', self._organization_url, 'name')
 
     def create_node(self, name: str, data: dict = None) -> Node:
-        """"""
+        """Create a node, with specified name
+
+        Args:
+            name: string, Name of the node
+            data: (optional) dictionary, containing additional attributes that will be added to the node
+
+        Returns:
+            New node
+
+        """
         data = data or {}
         data.update({'name': name})
         resp = self._create(f'{self._organization_url}/nodes', data)
         return Node(self, name, resp['uri'])
 
     def delete_node_by_name(self, name: str) -> bool:
-        """"""
+        """Delete node with specified name
+
+        Args:
+            name: string, name of the node
+
+        Returns:
+            True if deletion succeeded or False if deletion failed
+
+        """
         node = self.get_node_by_name(name)
         return node.delete()
 
     def search_nodes(self, query: str = '*:*', keys: dict = None):
-        """"""
+        """Search nodes, full and partial search supported.
+        When a keys dictionary is provided, only those attributes will be returned.
+        See https://docs.chef.io/chef_search/ for more details.
+
+        Args:
+            query: (optional) string containing the search query
+            keys: (optional) dictionary, containing the returned attributes (partial search)
+
+        Returns:
+            Generator for all nodes matching the search
+
+        """
         return EntityManager(self, 'Node', self._organization_url, 'name').filter(query, keys)
 
     def get_node_by_name(self, name: str) -> Node:
-        """"""
+        """Get node with specified name
+
+        Args:
+            name: string, name of the node
+
+        Returns:
+            First node with specified name
+
+        """
         return next((node for node in self.nodes if node.name.lower() == name.lower()), None)
 
-    def get_node_by_ip_address(self, ipaddress) -> Node:
-        """"""
+    def get_node_by_ip_address(self, ipaddress: str) -> Node:
+        """Get node with specified IP address
+
+        Args:
+            ipaddress: string, IP address of the node
+
+        Returns:
+            First node with specified IP address
+        """
         return next(EntityManager(self, 'Node', self._organization_url, 'name').filter(f'ipaddress:{ipaddress}'))
 
     @property
     def roles(self) -> EntityManager:
-        """"""
+        """List all roles
+
+        Returns:
+            Generator for all roles
+
+        """
         return EntityManager(self, 'Role', self._organization_url, 'name')
 
     def create_role(self, name: str, data: dict = None) -> Role:
-        """"""
+        """Create a role, with specified name.
+
+        Args:
+            name: string, name of the role
+            data: (optional) dictionary, containing additional attributes that will be added to the role.
+
+        Returns:
+            New role
+
+        """
         data = data or {}
         data.update({'name': name})
         resp = self._create(f'{self._organization_url}/roles', data)
         return Role(self, name, resp['uri'])
 
     def delete_role_by_name(self, name: str) -> bool:
-        """"""
+        """Delete role with specified name
+
+        Args:
+            name: string, name of the role
+
+        Returns:
+            True if deletion succeeded or False if deletion failed
+
+        """
         role = self.get_role_by_name(name)
         return role.delete()
 
     def get_role_by_name(self, name: str) -> Role:
-        """"""
+        """Get role with specified name
+
+        Args:
+            name: string, name of the role
+
+        Returns:
+            First role with specified name
+
+        """
         return next((role for role in self.roles if role.name.lower() == name.lower()), None)
 
     def raw(self, uri, method='get', **kwargs):
-        """"""
+        """Raw API calls to chef API
+        See https://docs.chef.io/workstation/knife_raw/ for more details.
+
+        Args:
+            uri: string, uri part of the API call
+            method: (optional) string, GET, PUT, DELETE or POST
+            **kwargs: (optional) additional keyword arguments
+
+        Returns:
+            JSON response from chef API
+
+        """
         url = f'{self._organization_url}/{uri}'
         self._logger.debug(f'Performing RAW api call, using method "{method.lower()}" to URL "{url}"')
         response = getattr(self, method.lower())(url, **kwargs)
