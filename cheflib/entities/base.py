@@ -191,4 +191,4 @@ class EntityManager:
               Generator of the objects retrieved based on the filtering.
 
         """
-        return self._get_entity_objects(query)
+        return self._get_entity_objects(query, keys)
