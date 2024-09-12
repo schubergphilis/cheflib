@@ -31,20 +31,14 @@ import concurrent.futures
 from typing import Optional
 
 from chefsessionlib import ChefSession
-from cheflib.entities import (Entity,
-                              EntityManager,
+from cheflib.entities import (EntityManager,
                               Client,
-                              ClientKey,
-                              Cookbook,
                               DataBag,
                               Environment,
                               Node,
                               Role)
 
-from .cheflibexceptions import (NodeNotFound,
-                                InvalidSearchIndex,
-                                CreateFailed,
-                                DeleteFailed)
+from .cheflibexceptions import (CreateFailed)
 from .configuration import (ENTITY_URL,
                             MAX_ROW_COUNT)
 
@@ -98,14 +92,14 @@ class Chef:
                                    authentication_version,
                                    api_version):
         """"""
-        self._logger.debug(f'Instantiating ChefSession')
+        self._logger.debug('Instantiating ChefSession')
         session = ChefSession(user_id,
                               private_key_contents,
                               client_version,
                               authentication_version,
                               api_version)
         # The next call has dual functionality, we test authentication and retrieve the allowed search indexes
-        self._logger.debug(f'Testing connectivity and gathering allowed search indexes')
+        self._logger.debug('Testing connectivity and gathering allowed search indexes')
         response = session.get(f'{self._organization_url}/search')
         self._search_indexes = response.json()
         return session
@@ -162,7 +156,7 @@ class Chef:
 
     @property
     def clients(self) -> EntityManager:
-        """List all clients
+        """List all clients.
 
         Returns:
             Generator for all clients
@@ -171,7 +165,7 @@ class Chef:
         return EntityManager(self, 'Client', self._organization_url)
 
     def create_client(self, name: str, data: dict = None) -> Optional[Client]:
-        """Create a client, with specified
+        """Create a client, with specified.
 
         Args:
             name: string, name of the client
@@ -192,7 +186,7 @@ class Chef:
         return Client(self, name, resp['uri'], resp['chef_key'])
 
     def delete_client_by_name(self, name: str) -> bool:
-        """Deletes a client by name
+        """Deletes a client by name.
 
         Args:
             name: string, name of the client
@@ -205,7 +199,7 @@ class Chef:
         return client.delete()
 
     def get_client_by_name(self, name: str) -> Client:
-        """Gets a client by name
+        """Gets a client by name.
 
         Args:
             name: string, name of the client
@@ -218,7 +212,7 @@ class Chef:
 
     @property
     def cookbooks(self) -> EntityManager:
-        """List all cookbooks
+        """List all cookbooks.
 
         Returns:
             Generator for all cookbooks
@@ -228,7 +222,7 @@ class Chef:
 
     @property
     def data_bags(self) -> EntityManager:
-        """list all data bags
+        """list all data bags.
 
         Returns:
             Generator for all data bags
@@ -237,7 +231,7 @@ class Chef:
         return EntityManager(self, 'DataBag', self._organization_url, 'name')
 
     def create_data_bag(self, name: str) -> Optional[DataBag]:
-        """Create a data bag
+        """Create a data bag.
 
         Args:
             name: string, name of the data bag
@@ -255,7 +249,7 @@ class Chef:
         return DataBag(self, name, resp['uri'])
 
     def get_data_bag_by_name(self, name: str) -> DataBag:
-        """Gets a data bag by name
+        """Gets a data bag by name.
 
         Args:
             name: string, name of the data bag
@@ -267,7 +261,7 @@ class Chef:
         return next((data_bag for data_bag in self.data_bags if data_bag.name.lower() == name.lower()), None)
 
     def get_data_bag_item_by_name(self, bag_name: str, name: str, secret: bytes = None) -> DataBag:
-        """Gets a data bag item by name
+        """Gets a data bag item by name.
 
         Args:
             bag_name: string, name of the data bag
@@ -283,7 +277,7 @@ class Chef:
 
     @property
     def environments(self) -> EntityManager:
-        """List all environments
+        """List all environments.
 
         Returns:
             Generator for all environments
@@ -292,7 +286,7 @@ class Chef:
         return EntityManager(self, 'Environment', self._organization_url, 'name')
 
     def create_environment(self, name: str, data: dict = None) -> Environment:
-        """Create a environment, with specified name
+        """Create a environment, with specified name.
 
         Args:
             name: string, name of the environment
@@ -308,7 +302,7 @@ class Chef:
         return Environment(self, name, resp['uri'])
 
     def delete_environment_by_name(self, name: str) -> bool:
-        """Delete environment with specifief name
+        """Delete environment with specifief name.
 
         Args:
             name: string, name of environment
@@ -321,7 +315,7 @@ class Chef:
         return environment.delete()
 
     def get_environment_by_name(self, name: str) -> Environment:
-        """Get environment with specified name
+        """Get environment with specified name.
 
         Args:
             name: string, name of the environment
@@ -334,7 +328,7 @@ class Chef:
 
     @property
     def nodes(self) -> EntityManager:
-        """List all nodes
+        """List all nodes.
 
         Returns:
             Generator for all nodes
@@ -343,7 +337,7 @@ class Chef:
         return EntityManager(self, 'Node', self._organization_url, 'name')
 
     def create_node(self, name: str, data: dict = None) -> Node:
-        """Create a node, with specified name
+        """Create a node, with specified name.
 
         Args:
             name: string, Name of the node
@@ -359,7 +353,7 @@ class Chef:
         return Node(self, name, resp['uri'])
 
     def delete_node_by_name(self, name: str) -> bool:
-        """Delete node with specified name
+        """Delete node with specified name.
 
         Args:
             name: string, name of the node
@@ -387,7 +381,7 @@ class Chef:
         return EntityManager(self, 'Node', self._organization_url, 'name').filter(query, keys)
 
     def get_node_by_name(self, name: str) -> Node:
-        """Get node with specified name
+        """Get node with specified name.
 
         Args:
             name: string, name of the node
@@ -399,7 +393,7 @@ class Chef:
         return next((node for node in self.nodes if node.name.lower() == name.lower()), None)
 
     def get_node_by_ip_address(self, ipaddress: str) -> Node:
-        """Get node with specified IP address
+        """Get node with specified IP address.
 
         Args:
             ipaddress: string, IP address of the node
@@ -411,7 +405,7 @@ class Chef:
 
     @property
     def roles(self) -> EntityManager:
-        """List all roles
+        """List all roles.
 
         Returns:
             Generator for all roles
@@ -436,7 +430,7 @@ class Chef:
         return Role(self, name, resp['uri'])
 
     def delete_role_by_name(self, name: str) -> bool:
-        """Delete role with specified name
+        """Delete role with specified name.
 
         Args:
             name: string, name of the role
@@ -449,7 +443,7 @@ class Chef:
         return role.delete()
 
     def get_role_by_name(self, name: str) -> Role:
-        """Get role with specified name
+        """Get role with specified name.
 
         Args:
             name: string, name of the role

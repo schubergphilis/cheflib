@@ -53,7 +53,6 @@ Chef node entity.
 from dataclasses import dataclass
 
 from .base import Entity
-import json
 
 
 @dataclass

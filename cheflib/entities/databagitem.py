@@ -76,7 +76,7 @@ def _is_encrypted(data) -> bool:
             if data[k]['version'] == 3:
                 encrypted = True
             elif data[k]['version'] in [1,2]:
-                LOGGER.info(f'Problem decrypting, we do not support version 1 and 2')
+                LOGGER.info('Problem decrypting, we do not support version 1 and 2')
                 pass
     return encrypted
 
@@ -93,7 +93,7 @@ def _decrypt_item(data, secret) -> dict:
             result = cipher.decrypt_and_verify(json_v['encrypted_data'], json_v['auth_tag'])
             db_item[item_key] = json.loads(result)
     except (ValueError, KeyError):
-        LOGGER.info(f'Decryption failed, maybe the wrong secret was provided?')
+        LOGGER.info('Decryption failed, maybe the wrong secret was provided?')
     return db_item
 
 

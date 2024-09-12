@@ -117,7 +117,7 @@ class Entity:
         return self._name
 
     def delete(self) -> bool:
-        """Delete entity"""
+        """Delete entity."""
         response = self._chef.session.delete(self._url)
         if not response.ok:
             self._logger.debug(f"Failed to delete '{self._url}, reason:\n{response.text}")
@@ -148,7 +148,7 @@ class EntityManager:
         return url
 
     def _get_entity_objects(self, query: str = None, keys: dict = None, max_row_count: int = MAX_ROW_COUNT) -> Generator:
-        """Get the entity objects from the chef server
+        """Get the entity objects from the chef server.
 
         If a query is provided it will use the search API otherwise it will use the default entity API
 

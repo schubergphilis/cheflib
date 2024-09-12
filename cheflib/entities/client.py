@@ -127,11 +127,11 @@ class Client(Entity):
         return ClientKey(self._chef, name, response_data['uri'])
 
     def get_key_by_name(self, name: str) -> ClientKey:
-        """Get client key by name"""
+        """Get client key by name."""
         return next((client_key for client_key in self.keys if client_key.name.lower() == name.lower()), None)
 
     def delete_key_by_name(self, name: str) -> bool:
-        """Delete client key by name"""
+        """Delete client key by name."""
         key = self.get_key_by_name(name)
         self._keys = None
         return key.delete()
