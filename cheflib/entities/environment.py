@@ -65,4 +65,3 @@ class Environment(Entity):
     @cookbook_versions.setter
     def cookbook_versions(self, value):
         self._save_data({'cookbook_versions': value})
-

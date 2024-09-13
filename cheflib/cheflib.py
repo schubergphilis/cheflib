@@ -60,7 +60,7 @@ LOGGER.addHandler(logging.NullHandler())
 
 
 class Chef:
-    """"""
+    """Chef api library."""
 
     def __init__(self,
                  endpoint: str,
@@ -104,7 +104,8 @@ class Chef:
         self._search_indexes = response.json()
         return session
 
-    def _get_paginated_response(self, entity_object, query=None, keys=None, parent_name: str = None, max_row_count: int = MAX_ROW_COUNT) -> Generator:
+    def _get_paginated_response(self, entity_object, query=None, keys=None, parent_name: str = None,
+                                max_row_count: int = MAX_ROW_COUNT) -> Generator:
         """"""
         http_method = getattr(self.session, 'post' if keys else 'get')
         keys = keys or {}
@@ -114,7 +115,7 @@ class Chef:
         if not response.ok:
             self._logger.warning(f'Unable to retrieve paginated response for "{url}"')
             self._logger.debug(f'Parameters: {params}, keys: {keys}')
-            return False
+            yield None
         response_data = response.json()
         total = response_data.get('total', 0)
         row_count = params.get('rows', MAX_ROW_COUNT)
@@ -134,7 +135,6 @@ class Chef:
                         yield from response_data.get('rows')
                     except Exception as e:  # pylint: disable=broad-except
                         self._logger.exception(f'Future failed...\nreason: {e}')
-                        pass
 
     def _create(self, url: str, data: dict) -> dict:
         """"""
@@ -222,7 +222,7 @@ class Chef:
 
     @property
     def data_bags(self) -> EntityManager:
-        """list all data bags.
+        """List all data bags.
 
         Returns:
             Generator for all data bags
@@ -367,6 +367,7 @@ class Chef:
 
     def search_nodes(self, query: str = '*:*', keys: dict = None):
         """Search nodes, full and partial search supported.
+
         When a keys dictionary is provided, only those attributes will be returned.
         See https://docs.chef.io/chef_search/ for more details.
 
@@ -400,6 +401,7 @@ class Chef:
 
         Returns:
             First node with specified IP address
+
         """
         return next(EntityManager(self, 'Node', self._organization_url, 'name').filter(f'ipaddress:{ipaddress}'))
 
@@ -455,7 +457,8 @@ class Chef:
         return next((role for role in self.roles if role.name.lower() == name.lower()), None)
 
     def raw(self, uri, method='get', **kwargs):
-        """Raw API calls to chef API
+        """Raw API calls to chef API.
+
         See https://docs.chef.io/workstation/knife_raw/ for more details.
 
         Args:

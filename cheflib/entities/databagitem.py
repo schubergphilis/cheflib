@@ -75,9 +75,8 @@ def _is_encrypted(data) -> bool:
         if 'version' in data[k]:
             if data[k]['version'] == 3:
                 encrypted = True
-            elif data[k]['version'] in [1,2]:
+            elif data[k]['version'] in [1, 2]:
                 LOGGER.info('Problem decrypting, we do not support version 1 and 2')
-                pass
     return encrypted
 
 
@@ -125,7 +124,6 @@ class DataBagItem(Entity):
             return _encrypt_item(data, self._secret)
         return data
 
-    @staticmethod
     def _post_data(self):
         """"""
         self._encrypted = False

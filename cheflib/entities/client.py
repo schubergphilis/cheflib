@@ -111,7 +111,7 @@ class Client(Entity):
         response = self._chef.session.get(url)
         if not response.ok:
             self._logger.debug(f'Unable to retrieve Keys url: "{url}", reason: "{response.text}"')
-            return None
+            yield None
         yield from (ClientKey(self._chef, key['name'], key['uri']) for key in response.json())
 
     def create_key(self, name, data) -> Optional[ClientKey]:

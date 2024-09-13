@@ -1,6 +1,6 @@
 [FORMAT]
-max-line-length=121
-disable=locally-disabled, locally-enabled, logging-fstring-interpolation
+max-line-length=124
+disable=locally-disabled, locally-enabled, logging-fstring-interpolation, too-many-locals, too-many-arguments
 
 [General]
 init-hook='import sys; sys.path.append("cheflib")'

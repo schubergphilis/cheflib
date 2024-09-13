@@ -60,7 +60,6 @@ class Cookbook(Entity):
 
     # Overriding the default data property, because
     # get result for cookbooks differs from default result
-    @property
     def _post_data(self):
         if self._data is None:
             response = self._chef.session.get(self._url)

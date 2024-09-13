@@ -86,10 +86,8 @@ class Entity:
             raise InvalidObject(response.text)
         self._data = None
 
-    @staticmethod
     def _post_data(self):
         """"""
-        pass
 
     @property
     def data(self):
@@ -99,7 +97,7 @@ class Entity:
                 self._logger.debug(f'Unable to retrieve data, Class: {hasattr(self, "__name__")}, url: {self._url}')
                 raise InvalidObject
             self._data = response.json()
-        self._post_data(self)
+        self._post_data()
         return self._data
 
     @data.setter
@@ -121,14 +119,13 @@ class Entity:
         response = self._chef.session.delete(self._url)
         if not response.ok:
             self._logger.debug(f"Failed to delete '{self._url}, reason:\n{response.text}")
-            pass
+            return False
         return response.ok
 
 
 class EntityManager:
     """Manages entities by making them act like iterables but also implements contains and other useful stuff."""
 
-    # pylint: disable=too-many-arguments
     def __init__(self, chef_instance, entity_object, parent_name=None, primary_match_field='name'):
         self._chef = chef_instance
         self._object_type = entity_object
@@ -162,7 +159,8 @@ class EntityManager:
         """
         module = __import__('cheflib.entities')
         entity_object = getattr(module, self._object_type)
-        entities = self._chef._get_paginated_response(entity_object, query=query, keys=keys, max_row_count=max_row_count, parent_name=self._parent_name) # noqa
+        entities = self._chef._get_paginated_response(entity_object, query=query, keys=keys, max_row_count=max_row_count,  # noqa
+                                                      parent_name=self._parent_name)
         # As mentioned in the documentation, when a 'query' was supplied, we get the responses from the search api,
         # which returns the data in a different format. If no query was supplied we simply use the getter of the entity.
         # This means we yield from a different generator.
