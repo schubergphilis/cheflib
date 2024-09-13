@@ -13,3 +13,9 @@ History
 ------------------
 
 * * Fixed partial search
+
+
+0.0.3 (13-09-2024)
+------------------
+
+* fixed codestyle
