@@ -19,3 +19,9 @@ History
 ------------------
 
 * Fixed codestyle
+
+
+0.0.4 (13-09-2024)
+------------------
+
+* Add usage examples
