@@ -12,10 +12,10 @@ History
 0.0.2 (13-09-2024)
 ------------------
 
-* * Fixed partial search
+* Fixed partial search
 
 
 0.0.3 (13-09-2024)
 ------------------
 
-* fixed codestyle
+* Fixed codestyle
