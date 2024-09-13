@@ -7,3 +7,9 @@ History
 ---------------------
 
 * First code creation
+
+
+0.0.2 (13-09-2024)
+------------------
+
+* * Fixed partial search
