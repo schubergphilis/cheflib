@@ -20,6 +20,24 @@
 """
 Chef node entity.
 
+Source: https://docs.chef.io/server/api_chef_server/
+
+Request
+
+GET /organizations/NAME/nodes
+Response
+
+The response is similar to:
+
+{
+  "latte": "https://localhost/nodes/latte"
+}
+
+Request
+
+POST /organizations/NAME/nodes
+with a request body similar to:
+
 {
   "name": "latte",
   "chef_type": "node",
@@ -32,18 +50,11 @@ Chef node entity.
   "run_list": [ "recipe[unicorn]" ]
 }
 
+Response
 
-{
-    'automatic': {},
-    'chef_environment': '_default',
-    'chef_type': 'node',
-    'default': {},
-    'json_class': 'Chef::Node',
-    'name': 'magweg',
-    'normal': {},
-    'override': {},
-    'run_list': []
-}
+The response is similar to:
+
+{ "uri": "https://localhost/nodes/latte" }
 
 .. _Google Python Style Guide:
    https://google.github.io/styleguide/pyguide.html
@@ -57,7 +68,7 @@ from .base import Entity
 
 @dataclass
 class Node(Entity):
-    """"""
+    """Node entity."""
 
     @property
     def ip_address(self):

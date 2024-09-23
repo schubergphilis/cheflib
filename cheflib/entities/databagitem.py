@@ -20,6 +20,8 @@
 """
 Chef data bag entity.
 
+Source: https://docs.chef.io/server/api_chef_server/
+
 GET: /organizations/NAME/data
 {
   "users": "https://chef.example/organizations/NAME/data/users",
@@ -119,13 +121,13 @@ class DataBagItem(Entity):
     _encrypted_data: Optional[dict] = None
 
     def _pre_save_data(self, data: Dict) -> Dict:
-        """"""
+        """If secret is given, encrypt item."""
         if self._secret:
             return _encrypt_item(data, self._secret)
         return data
 
     def _post_data(self):
-        """"""
+        """Decrypt item is item is encrypted and secret is given."""
         self._encrypted = False
         self._encrypted_data = None
         if _is_encrypted(self._data):

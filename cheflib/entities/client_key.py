@@ -20,6 +20,8 @@
 """
 Chef client key entity.
 
+Source: https://docs.chef.io/server/api_chef_server/
+
 GET: /organizations/NAME/clients/NAME/keys
 This method has no request body.
 Response:
@@ -80,18 +82,21 @@ from .base import Entity
 
 @dataclass
 class ClientKey(Entity):
-    """"""
+    """Client key entity."""
 
     @property
     def public_key(self):
+        """Return public key or None."""
         return self.data.get('public_key')
 
     @property
     def expiration_date(self):
+        """Return the expiration date of the key or None."""
         return self.data.get('expiration_date')
 
     @property
     def expired(self):
+        """Returns true if key is expired."""
         if self.expiration_date == 'infinity':
             return False
         datetime_format = '%Y-%m-%dT%H:%M:%SZ'

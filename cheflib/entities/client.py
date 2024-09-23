@@ -20,6 +20,8 @@
 """
 Chef client entity.
 
+Source: https://docs.chef.io/server/api_chef_server/
+
 GET: /organizations/NAME/clients
 This method has no request body.
 Response:
@@ -82,7 +84,8 @@ from .client_key import ClientKey
 
 @dataclass
 class Client(Entity):
-    """"""
+    """Client entity."""
+
     _keys: Optional[Dict] = None
 
     @property
@@ -115,7 +118,7 @@ class Client(Entity):
         yield from (ClientKey(self._chef, key['name'], key['uri']) for key in response.json())
 
     def create_key(self, name, data) -> Optional[ClientKey]:
-        """"""
+        """Create new key."""
         body = {'name': name}
         body.update(data)
         response = self._chef.session.post(f'{self._url}/keys', json=body)

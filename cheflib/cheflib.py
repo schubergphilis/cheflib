@@ -91,7 +91,7 @@ class Chef:
                                    client_version,
                                    authentication_version,
                                    api_version):
-        """"""
+        """Get an authenticated session from ChefSessionLib."""
         self._logger.debug('Instantiating ChefSession')
         session = ChefSession(user_id,
                               private_key_contents,
@@ -106,7 +106,7 @@ class Chef:
 
     def _get_paginated_response(self, entity_object, query=None, keys=None, parent_name: str = None,
                                 max_row_count: int = MAX_ROW_COUNT) -> Generator:
-        """"""
+        """Get paginated reponse for large results."""
         http_method = getattr(self.session, 'post' if keys else 'get')
         keys = keys or {}
         params = {'q': query, 'rows': max_row_count, 'start': 0} if query else {}
@@ -137,21 +137,21 @@ class Chef:
                         self._logger.exception(f'Future failed...\nreason: {e}')
 
     def _create(self, url: str, data: dict) -> dict:
-        """"""
+        """Entity creator function."""
         response = self.session.post(url, json=data)
         if not response.ok:
             raise CreateFailed(f"Failed to create '{data['name']}, reason:\n{response.text}")
         return response.json()
 
     def _request_url(self, entity: str, params: dict = None, parent_name=None) -> str:
-        """"""
+        """Format the request URL."""
         if params:
             return f'{self._organization_url}/search/{entity.lower()}'
         return f'{ENTITY_URL[entity.lower()].format(organization_url=self._organization_url, parent_name=parent_name)}'
 
     @property
     def _organization_url(self) -> str:
-        """"""
+        """Generate the organization URL."""
         return f'{self.base_url}/organizations/{self.organization}'
 
     @property

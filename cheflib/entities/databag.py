@@ -20,6 +20,8 @@
 """
 Chef data bag entity.
 
+Source: https://docs.chef.io/server/api_chef_server/
+
 GET: /organizations/NAME/data
 {
   "users": "https://chef.example/organizations/NAME/data/users",
@@ -52,13 +54,14 @@ from .base import Entity
 
 @dataclass
 class DataBag(Entity):
-    """"""
+    """Data bag entity."""
+
     @property
     def get_item_names(self):
         return self.data.keys()
 
     def get_item_by_name(self, name: str, secret: bytes = None) -> [DataBagItem, None]:
-        """"""
+        """Get data bag item by name."""
         url = self.data.get(name, None)
         if not url:
             # TODO log invalid name
@@ -66,7 +69,7 @@ class DataBag(Entity):
         return DataBagItem(self._chef, name, url, _secret=secret)
 
     def create_item(self, name, data, secret=None) -> Optional[DataBagItem]:
-        """"""
+        """Create item in data bag, encrypt if secret is given."""
         body = {'id': name}
         response = self._chef.session.post(self._url, json=body)
         if not response.ok:
