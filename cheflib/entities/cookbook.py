@@ -20,6 +20,8 @@
 """
 Chef cookbook entity.
 
+Source: https://docs.chef.io/server/api_chef_server/
+
 GET /organizations/NAME/cookbooks
 
 {
@@ -56,7 +58,7 @@ from cheflib.cheflibexceptions import InvalidObject
 
 @dataclass
 class Cookbook(Entity):
-    """"""
+    """Cookbook entity."""
 
     # Overriding the default data property, because
     # get result for cookbooks differs from default result

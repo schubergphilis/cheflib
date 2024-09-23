@@ -20,6 +20,39 @@
 """
 Chef environment entity.
 
+Source: https://docs.chef.io/server/api_chef_server/
+
+Request:
+
+GET /organizations/NAME/environments
+Response
+
+The response is similar to:
+
+{
+  "_default": "https://api.chef.io/organizations/org_name/environments/_default",
+  "webserver": "https://api.chef.io/organizations/org_name/environments/webserver"
+}
+
+POST /organizations/NAME/environments
+with a request body similar to:
+
+{
+  "name": "dev",
+  "default_attributes": {},
+  "json_class": "Chef::Environment",
+  "description": "",
+  "cookbook_versions": {},
+  "chef_type": "environment"
+}
+
+Response
+
+The response is similar to:
+
+{ "uri": "https://localhost/environments/dev" }
+
+
 .. _Google Python Style Guide:
    https://google.github.io/styleguide/pyguide.html
 
@@ -32,7 +65,7 @@ from .base import Entity
 
 @dataclass
 class Environment(Entity):
-    """"""
+    """Environment entity."""
 
     @property
     def description(self):

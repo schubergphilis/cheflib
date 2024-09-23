@@ -48,12 +48,12 @@ class Entity:
     _data: Optional[Dict] = None
 
     def __post_init__(self):
-        """"""
+        """Post init configurator."""
         self._logger = logging.getLogger(f'{LOGGER_BASENAME}.{self.__class__.__name__}')
 
     @classmethod
     def from_data(cls, chef_instance, data: Dict):
-        """"""
+        """Function to intantiate entity from given data."""
         # the data could contain the URL to the object or the name of the object, the API is behaving one way
         # for certain get calls and another way for other calls.
         # If the URL is contained in the data dict, and the 'name' of the object can be extracted,
@@ -68,14 +68,15 @@ class Entity:
 
     @staticmethod
     def _generate_entity_url(class_name, organization_url: str, name: str, parent_name: str = None) -> str:
-        """"""
+        """Generate the URL for entity."""
         return f"{ENTITY_URL[class_name.lower()].format(organization_url=organization_url, parent_name=parent_name)}/{name}"
 
     def _pre_save_data(self, data: Dict) -> Dict:
-        """"""
+        """Helper function to manipulate data prior to saving."""
         return data
 
     def _save_data(self, data: dict):
+        """Save data, new data and existing data will be merged."""
         payload = deepcopy(self.data)
         payload.update(data)
         payload = self._pre_save_data(payload)
@@ -87,10 +88,11 @@ class Entity:
         self._data = None
 
     def _post_data(self):
-        """"""
+        """Helper function to manipulate data after retrieving from server."""
 
     @property
     def data(self):
+        """Return cached data or retrieve it from server."""
         if self._data is None:
             response = self._chef.session.get(self._url)
             if not response.ok:
@@ -102,7 +104,7 @@ class Entity:
 
     @data.setter
     def data(self, data: dict):
-        """"""
+        """Data setter, will save to server."""
         if not isinstance(data, dict):
             self._logger.debug(f'"data" is not a dict, but Class: {hasattr(data, "__name__")}')
             raise InvalidObject
@@ -112,6 +114,7 @@ class Entity:
 
     @property
     def name(self):
+        """Return name of entity."""
         return self._name
 
     def delete(self) -> bool:
@@ -139,7 +142,11 @@ class EntityManager:
 
     @staticmethod
     def _verify_entity_url(url) -> str:
-        """"""
+        """Verify entity URL.
+
+        URL could be a dict that contains the URL, so we will check and extract the URL.
+
+        """
         if isinstance(url, dict) and 'url' in url:
             return url['url']
         return url

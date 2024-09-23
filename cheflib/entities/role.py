@@ -20,6 +20,47 @@
 """
 Chef role entity.
 
+Source: https://docs.chef.io/server/api_chef_server/
+
+Request
+
+GET /organizations/NAME/roles
+
+Response
+
+The response is similar to:
+
+{
+  "webserver": "https://chef.example/organizations/org1/roles/webserver"
+}
+
+
+Request
+
+POST /organizations/NAME/roles
+with a request body similar to:
+
+{
+  "name": "webserver",
+  "default_attributes": {},
+  "description": "A webserver",
+  "env_run_lists": {
+    "testenv": {
+      "recipe[pegasus]"
+    }
+  },
+  "run_list": [
+    "recipe[unicorn]",
+    "recipe[apache2]"
+  ],
+  "override_attributes": {}
+}
+Response
+
+The response is similar to:
+
+{ "uri": "https://chef.example/organizations/org1/roles/webserver" }
+
 .. _Google Python Style Guide:
    https://google.github.io/styleguide/pyguide.html
 
@@ -32,4 +73,4 @@ from .base import Entity
 
 @dataclass
 class Role(Entity):
-    """"""
+    """Role entity."""

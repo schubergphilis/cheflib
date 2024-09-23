@@ -37,24 +37,24 @@ __status__ = 'Development'  # "Prototype", "Development", "Production".
 
 
 class InvalidObject(Exception):
-    """"""
+    """Invalid object exception."""
 
 
 class InvalidSearchIndex(Exception):
-    """"""
+    """Invalid search index exception."""
 
 
 class NodeNotFound(Exception):
-    """"""
+    """Node not found exception."""
 
 
 class CreateFailed(Exception):
-    """"""
+    """Create failed exception."""
 
 
 class DeleteFailed(Exception):
-    """"""
+    """Delete failed  exception."""
 
 
 class UnAuthorized(Exception):
-    """"""
+    """Unauthorized  exception."""
