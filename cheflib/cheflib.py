@@ -33,6 +33,7 @@ from typing import Optional
 from chefsessionlib import ChefSession
 from cheflib.entities import (EntityManager,
                               Client,
+                              Cookbook,
                               DataBag,
                               Environment,
                               Node,
@@ -219,6 +220,33 @@ class Chef:
 
         """
         return EntityManager(self, 'Cookbook', self._organization_url, 'name')
+
+    def get_cookbook_by_name(self, name: str) -> Cookbook:
+        """Gets a cookbook by name.
+
+        Args:
+            name: string, name of the cookbook
+
+        Returns:
+            First cookbook with specified name
+
+        """
+        return next((cookbook for cookbook in self.cookbooks if cookbook.name.lower() == name.lower()), None)
+
+    def delete_cookbook_by_name(self, name: str, version: str) -> bool:
+        """Deletes a cookbook by name.
+
+        Args:
+            name: string, name of the cookbook
+
+        Returns:
+            True if deletion succeeded or False if deletion failed
+
+        """
+        cookbook = self.get_cookbook_by_name(name)
+        if not cookbook or version not in cookbook.versions:
+            return False
+        return cookbook.delete(version)
 
     @property
     def data_bags(self) -> EntityManager:

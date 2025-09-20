@@ -69,6 +69,20 @@ class Cookbook(Entity):
                 raise InvalidObject
             self._data = response.json()[self._name]
 
+    def delete(self, version: str) -> bool:
+        """Delete entity."""
+        response = self._chef.session.delete(f'{self._url}/{version}')
+        if not response.ok:
+            self._logger.debug(f"Failed to delete '{self._url}/{version}', reason:\n{response.text}")
+            return False
+        return response.ok
+
+    @property
+    def version_urls(self):
+        data = self.data.get(self._name)
+        return [{version['version']: version['url']} for version in data['versions']]
+
     @property
     def versions(self):
-        return self.data.get('versions')
+        data = self.data.get(self._name)
+        return [version['version'] for version in data['versions']]

@@ -121,7 +121,7 @@ class Entity:
         """Delete entity."""
         response = self._chef.session.delete(self._url)
         if not response.ok:
-            self._logger.debug(f"Failed to delete '{self._url}, reason:\n{response.text}")
+            self._logger.debug(f"Failed to delete '{self._url}', reason:\n{response.text}")
             return False
         return response.ok
 

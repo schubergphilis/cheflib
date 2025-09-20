@@ -60,7 +60,7 @@ class DataBag(Entity):
     def get_item_names(self):
         return self.data.keys()
 
-    def get_item_by_name(self, name: str, secret: bytes = None) -> [DataBagItem, None]:
+    def get_item_by_name(self, name: str, secret: bytes = None) -> list[DataBagItem, None]:
         """Get data bag item by name."""
         url = self.data.get(name, None)
         if not url:
