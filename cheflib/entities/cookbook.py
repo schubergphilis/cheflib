@@ -69,7 +69,7 @@ class Cookbook(Entity):
                 raise InvalidObject
             self._data = response.json()[self._name]
 
-    def delete(self, version: str) -> bool:
+    def delete(self, version: str) -> bool: # noqa
         """Delete entity."""
         response = self._chef.session.delete(f'{self._url}/{version}')
         if not response.ok:

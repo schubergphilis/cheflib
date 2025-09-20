@@ -117,7 +117,7 @@ class Entity:
         """Return name of entity."""
         return self._name
 
-    def delete(self, _ = None) -> bool:
+    def delete(self) -> bool:
         """Delete entity."""
         response = self._chef.session.delete(self._url)
         if not response.ok:
